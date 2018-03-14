@@ -3,7 +3,7 @@ var requestModule = require('request');
 var jar = requestModule.jar();
 
 var request      = requestModule.defaults({jar: jar}), // Cookies should be enabled
-    UserAgent    = 'Ubuntu Chromium/34.0.1847.116 Chrome/34.0.1847.116 Safari/537.36',
+    UserAgent    = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
     Timeout      = 6000, // Cloudflare requires a delay of 5 seconds, so wait for at least 6.
     cloudscraper = {};
 
@@ -137,7 +137,7 @@ function checkForErrors(error, body) {
 
 function solveChallenge(response, body, options, callback) {
   var challenge = body.match(/name="jschl_vc" value="(\w+)"/),
-      host = response.request.host,
+      host = response.request.uri.host,
       makeRequest = requestMethod(options.method),
       jsChlVc,
       answerResponse,
@@ -167,8 +167,8 @@ function solveChallenge(response, body, options, callback) {
   try {
     answerResponse = {
       'jschl_vc': jsChlVc,
-      'jschl_answer': (eval(challenge) + response.request.host.length),
-      'pass': challenge_pass
+      'pass': challenge_pass,
+      'jschl_answer': (eval(challenge) + response.request.uri.host.length),
     };
   } catch (err) {
     return callback({errorType: 3, error: 'Error occurred during evaluation: ' +  err.message}, body, response);
@@ -176,7 +176,7 @@ function solveChallenge(response, body, options, callback) {
 
   answerUrl = response.request.uri.protocol + '//' + host + '/cdn-cgi/l/chk_jschl';
 
-  options.headers['Referer'] = response.request.uri.href; // Original url should be placed as referer
+  options.headers['Referer'] = response.request.uri.href
   options.url = answerUrl;
   options.qs = answerResponse;
 
@@ -185,7 +185,6 @@ function solveChallenge(response, body, options, callback) {
     if(error) {
       return callback({ errorType: 0, error: error }, response, body);
     }
-
     if(response.statusCode === 302) { //occurrs when posting. request is supposed to auto-follow these
                                       //by default, but for some reason it's not
       options.url = response.headers.location;
