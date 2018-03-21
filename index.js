@@ -1,6 +1,7 @@
 var vm = require('vm');
 var requestModule = require('request');
 var defaultJar = requestModule.jar();
+var lo = require('lodash');
 
 var request      = requestModule.defaults({jar: defaultJar}), // Cookies should be enabled
     UserAgent    = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
@@ -61,11 +62,19 @@ cloudscraper.request = function(options, callback) {
   performRequest(options, callback);
 }
 
-function performRequest(options, callback) {
+function performRequest(opt, callback) {
   var method;
-  options = options || {};
+  options = lo.cloneDeep(opt) || {};
   options.headers = options.headers || {};
   makeRequest = requestMethod(options.method);
+
+  // remove any conflicting options 
+  lo.forEach(['callback', 'uri'], function(x){
+    delete(options[x]);
+  });
+
+  // retain refs to certain objects that can't be cloned
+  if (opt.jar) options.jar = opt.jar;
 
   //Can't just do the normal options.encoding || 'utf8'
   //because null is a valid encoding.
@@ -159,8 +168,7 @@ function solveChallenge(response, body, options, callback) {
 
   challenge = challenge[1];
 
-  challenge = challenge.replace(/a\.value =(.+?) \+ .+?;/i, '$1');
-
+  challenge = challenge.replace(/a\.value\s*=\s*(.+?)\s*\+\s*.+?;/i, '$1');
   challenge = challenge.replace(/\s{3,}[a-z](?: = |\.).+/g, '');
   challenge = challenge.replace(/'; \d+'/g, '');
 
