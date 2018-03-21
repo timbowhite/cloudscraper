@@ -239,6 +239,7 @@ function requestMethod(method) {
 }
 
 function giveResults(options, error, response, body, callback) {
+  response.jar = jar;
   if(typeof options.realEncoding === 'string') {
     callback(error, response, body.toString(options.realEncoding));
   } else {
