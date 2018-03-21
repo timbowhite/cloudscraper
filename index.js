@@ -1,8 +1,8 @@
 var vm = require('vm');
 var requestModule = require('request');
-var jar = requestModule.jar();
+var defaultJar = requestModule.jar();
 
-var request      = requestModule.defaults({jar: jar}), // Cookies should be enabled
+var request      = requestModule.defaults({jar: defaultJar}), // Cookies should be enabled
     UserAgent    = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
     Timeout      = 6000, // Cloudflare requires a delay of 5 seconds, so wait for at least 6.
     cloudscraper = {};
@@ -199,6 +199,7 @@ function solveChallenge(response, body, options, callback) {
 }
 
 function setCookieAndReload(response, body, options, callback) {
+  var jar = options.jar || defaultJar;
   var challenge = body.match(/S='([^']+)'/);
   var makeRequest = requestMethod(options.method);
 
@@ -239,7 +240,7 @@ function requestMethod(method) {
 }
 
 function giveResults(options, error, response, body, callback) {
-  response.jar = jar;
+  response.jar = options.jar || defaultJar; 
   if(typeof options.realEncoding === 'string') {
     callback(error, response, body.toString(options.realEncoding));
   } else {
